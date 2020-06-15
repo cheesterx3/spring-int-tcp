@@ -1,13 +1,13 @@
-#Dynamic tcp outbound gateway implementation
+# Dynamic tcp outbound gateway implementation
 ### Description
 Allows to create tcp outbound gateways using host/port according some expressions(for example from headers).
 
 Also allows to cache connections to prevent register/unregister flows and beans in runtime.
-###Includes
+### Includes
 * Dynamic tcp outbound gateway library
 * Dynamic tcp outbound autoconfigure
 
-###Usage
+### Usage
 
 ```
     private final DynamicTcpOutboundGatewaySpec outboundGatewaySpec;
