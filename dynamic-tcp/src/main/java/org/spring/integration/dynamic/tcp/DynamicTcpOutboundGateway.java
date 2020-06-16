@@ -35,7 +35,6 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
 
     public DynamicTcpOutboundGateway(IntegrationFlowContext flowContext) {
         this.flowContext = flowContext;
-
     }
 
     private static String getFlowId(String host, Integer port) {

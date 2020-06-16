@@ -3,6 +3,8 @@
 Allows to create tcp outbound gateways using host/port according some expressions(for example from headers).
 
 Also allows to cache connections to prevent register/unregister flows and beans in runtime.
+
+This is just a simple implementation of single request/reply using dynamic registration integration flows
 ### Includes
 * Dynamic tcp outbound gateway library
 * Dynamic tcp outbound autoconfigure
