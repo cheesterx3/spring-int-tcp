@@ -19,6 +19,7 @@ import org.springframework.util.Assert;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.util.Objects.nonNull;
@@ -36,6 +37,7 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
     private final Map<String, IntegrationFlowContext.IntegrationFlowRegistration> flowCache = new ConcurrentHashMap<>();
     private final IntegrationFlowContext flowContext;
     private final EvaluationContext evaluationContext = new StandardEvaluationContext();
+    private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private String responseChannel = DEFAULT_RESPONSE_CHANNEL_NAME;
     private AbstractByteArraySerializer deserializer = new ByteArrayCrLfSerializer();
     private Expression cacheableExpression = new ValueExpression<>(Boolean.FALSE);
@@ -86,7 +88,7 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
     private IntegrationFlowContext.IntegrationFlowRegistration createNonCacheableConnectionFlow(String flowId, TcpOutboundGatewaySpec gatewaySpec) {
         final IntegrationFlow flow = f -> f
                 .handle(gatewaySpec)
-                .publishSubscribeChannel(Executors.newCachedThreadPool(), s -> s.subscribe(subFlow -> subFlow.channel(responseChannel)))
+                .publishSubscribeChannel(threadPool, s -> s.subscribe(subFlow -> subFlow.channel(responseChannel)))
                 .handle(message -> flowContext.remove(flowId));
         return flowContext
                 .registration(flow)
@@ -140,7 +142,7 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
 
     private long getRemoteTimeout(Message<?> requestMessage) {
         if (nonNull(remoteTimeoutExpression)) {
-            final Long timeout = this.connectTimeoutExpression.getValue(this.evaluationContext, requestMessage, Long.class);
+            final Long timeout = this.remoteTimeoutExpression.getValue(this.evaluationContext, requestMessage, Long.class);
             return nonNull(timeout) ? timeout : 0;
         }
         return DEFAULT_REMOTE_TIMEOUT;
