@@ -22,6 +22,8 @@ This is just a simple implementation of single request/reply using dynamic regis
                         .deserializer(deserializer)
                         .serializer(serializer)
                         .cacheable("!headers['host'].equals(\"127.0.0.1\")")
+                        .connectTimeout(30)
+                        .remoteTimeout(20_000L)                        
                         .responseChannelName("serverResponseChannel"))
                 .get();
     }

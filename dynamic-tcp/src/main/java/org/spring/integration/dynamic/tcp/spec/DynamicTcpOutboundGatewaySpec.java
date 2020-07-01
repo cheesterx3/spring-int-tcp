@@ -6,6 +6,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.dsl.MessageProcessorSpec;
 import org.springframework.integration.dsl.context.IntegrationFlowContext;
 import org.springframework.integration.expression.FunctionExpression;
+import org.springframework.integration.expression.ValueExpression;
 import org.springframework.integration.ip.tcp.serializer.AbstractByteArraySerializer;
 import org.springframework.messaging.Message;
 
@@ -141,6 +142,30 @@ public class DynamicTcpOutboundGatewaySpec extends MessageProcessorSpec<DynamicT
         getRequestFlow().setRemoteTimeout(PARSER.parseExpression(expression));
         return _this();
     }
+
+    /**
+     * Setting a connectTimeout value retrieving expression from message
+     *
+     * @param timeout connect timeout value
+     * @return DynamicTcpOutboundGatewaySpec
+     */
+    public DynamicTcpOutboundGatewaySpec connectTimeout(int timeout) {
+        getRequestFlow().setConnectTimeout(new ValueExpression<>(timeout));
+        return _this();
+    }
+
+    /**
+     * Setting a remoteTimeout value retrieving expression from message
+     *
+     * @param timeout remote timeout value
+     * @return DynamicTcpOutboundGatewaySpec
+     */
+    public DynamicTcpOutboundGatewaySpec remoteTimeout(long timeout) {
+        getRequestFlow().setRemoteTimeout(new ValueExpression<>(timeout));
+        return _this();
+    }
+
+
 
     private DynamicTcpOutboundGateway getRequestFlow() {
         return (DynamicTcpOutboundGateway) this.target;
