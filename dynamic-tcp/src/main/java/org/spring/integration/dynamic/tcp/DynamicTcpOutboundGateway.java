@@ -21,17 +21,29 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
+import static java.util.Objects.nonNull;
+
 public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChannel> {
     public static final String DEFAULT_RESPONSE_CHANNEL_NAME = "serverResponseChannel";
+    /**
+     * {@link org.springframework.integration.ip.tcp.TcpOutboundGateway#DEFAULT_REMOTE_TIMEOUT}
+     */
+    private static final long DEFAULT_REMOTE_TIMEOUT = 10_000L;
+    /**
+     * {@link org.springframework.integration.ip.tcp.connection.AbstractClientConnectionFactory#DEFAULT_CONNECT_TIMEOUT}
+     */
+    private static final int DEFAULT_CONNECT_TIMEOUT = 60;
     private final Map<String, IntegrationFlowContext.IntegrationFlowRegistration> flowCache = new ConcurrentHashMap<>();
     private final IntegrationFlowContext flowContext;
     private final EvaluationContext evaluationContext = new StandardEvaluationContext();
     private String responseChannel = DEFAULT_RESPONSE_CHANNEL_NAME;
     private AbstractByteArraySerializer deserializer = new ByteArrayCrLfSerializer();
+    private Expression cacheableExpression = new ValueExpression<>(Boolean.FALSE);
+    private Expression remoteTimeoutExpression = new ValueExpression<>(DEFAULT_REMOTE_TIMEOUT);
+    private Expression connectTimeoutExpression = new ValueExpression<>(DEFAULT_CONNECT_TIMEOUT);
     private Serializer<?> serializer;
     private Expression hostExpression;
     private Expression portExpression;
-    private Expression cacheableExpression = new ValueExpression<>(Boolean.FALSE);
 
     public DynamicTcpOutboundGateway(IntegrationFlowContext flowContext) {
         this.flowContext = flowContext;
@@ -48,14 +60,15 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
         final boolean cacheable = isCacheable(message);
         final String flowId = getFlowId(host, port) + (cacheable ? "" : System.nanoTime());
 
-        final TcpClientConnectionFactorySpec connectionFactorySpec = Tcp.netClient(host, port);
-        final TcpOutboundGatewaySpec gatewaySpec = getMessageHandlerSpec(connectionFactorySpec);
-        IntegrationFlowContext.IntegrationFlowRegistration registration;
+        final TcpClientConnectionFactorySpec connectionFactorySpec = Tcp.netClient(host, port)
+                .connectTimeout(getConnectTimeout(message));
+        final TcpOutboundGatewaySpec gatewaySpec = getMessageHandlerSpec(connectionFactorySpec)
+                .remoteTimeout(this::getRemoteTimeout);
+        final IntegrationFlowContext.IntegrationFlowRegistration registration;
         if (!cacheable) {
             registration = createNonCacheableConnectionFlow(flowId, gatewaySpec);
         } else {
             registration = flowCache.computeIfAbsent(flowId, id -> createConnectionFlow(id, gatewaySpec));
-
         }
         return registration.getInputChannel();
     }
@@ -117,6 +130,22 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
         return port;
     }
 
+    private int getConnectTimeout(Message<?> requestMessage) {
+        if (nonNull(connectTimeoutExpression)) {
+            final Integer timeout = this.connectTimeoutExpression.getValue(this.evaluationContext, requestMessage, Integer.class);
+            return nonNull(timeout) ? timeout : 0;
+        }
+        return DEFAULT_CONNECT_TIMEOUT;
+    }
+
+    private long getRemoteTimeout(Message<?> requestMessage) {
+        if (nonNull(remoteTimeoutExpression)) {
+            final Long timeout = this.connectTimeoutExpression.getValue(this.evaluationContext, requestMessage, Long.class);
+            return nonNull(timeout) ? timeout : 0;
+        }
+        return DEFAULT_REMOTE_TIMEOUT;
+    }
+
     public void setDeserializer(AbstractByteArraySerializer deserializer) {
         this.deserializer = deserializer;
     }
@@ -141,4 +170,11 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
         this.cacheableExpression = cacheableExpression;
     }
 
+    public void setConnectTimeout(Expression timeoutExpression) {
+        this.connectTimeoutExpression = timeoutExpression;
+    }
+
+    public void setRemoteTimeout(Expression timeoutExpression) {
+        this.remoteTimeoutExpression = timeoutExpression;
+    }
 }

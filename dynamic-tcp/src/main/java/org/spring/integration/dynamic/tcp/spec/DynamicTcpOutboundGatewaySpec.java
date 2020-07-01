@@ -18,48 +18,127 @@ public class DynamicTcpOutboundGatewaySpec extends MessageProcessorSpec<DynamicT
         this.target = new DynamicTcpOutboundGateway(flowContext);
     }
 
+    /**
+     * Setting a deserializer
+     *
+     * @param deserializer instance of deserializer
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec deserializer(AbstractByteArraySerializer deserializer) {
         getRequestFlow().setDeserializer(deserializer);
         return _this();
     }
 
+    /**
+     * Setting a serializer
+     *
+     * @param serializer instance of serializer
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec serializer(Serializer<?> serializer) {
         getRequestFlow().setSerializer(serializer);
         return _this();
     }
 
+    /**
+     * Setting a name of channel where response will be sended from tcp connection
+     *
+     * @param responseChannelName channel name
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec responseChannelName(String responseChannelName) {
         getRequestFlow().setResponseChannel(responseChannelName);
         return _this();
     }
 
+    /**
+     * Setting a host retrieving function from message
+     *
+     * @param hostExpression expression function
+     * @param <P>            payload type
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public <P> DynamicTcpOutboundGatewaySpec host(Function<Message<P>, ?> hostExpression) {
         getRequestFlow().setHostExpression(new FunctionExpression<>(hostExpression));
         return _this();
     }
 
+    /**
+     * Setting a port retrieving function from message
+     *
+     * @param portExpression expression function
+     * @param <P>            payload type
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public <P> DynamicTcpOutboundGatewaySpec port(Function<Message<P>, ?> portExpression) {
         getRequestFlow().setPortExpression(new FunctionExpression<>(portExpression));
         return _this();
     }
 
+    /**
+     * Setting a cacheable param retrieving function from message
+     *
+     * @param cacheableExpression expression function
+     * @param <P>                 payload type
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public <P> DynamicTcpOutboundGatewaySpec cacheable(Function<Message<P>, ?> cacheableExpression) {
         getRequestFlow().setCacheableExpression(new FunctionExpression<>(cacheableExpression));
         return _this();
     }
 
+    /**
+     * Setting a host retrieving expression from message
+     *
+     * @param expression expression
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec host(String expression) {
         getRequestFlow().setHostExpression(PARSER.parseExpression(expression));
         return _this();
     }
 
+    /**
+     * Setting a port retrieving expression from message
+     *
+     * @param expression expression
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec port(String expression) {
         getRequestFlow().setPortExpression(PARSER.parseExpression(expression));
         return _this();
     }
 
+    /**
+     * Setting a cacheable retrieving expression from message
+     *
+     * @param expression expression
+     * @return DynamicTcpOutboundGatewaySpec
+     */
     public DynamicTcpOutboundGatewaySpec cacheable(String expression) {
         getRequestFlow().setCacheableExpression(PARSER.parseExpression(expression));
+        return _this();
+    }
+
+    /**
+     * Setting a connectTimeout value retrieving expression from message
+     *
+     * @param expression expression
+     * @return DynamicTcpOutboundGatewaySpec
+     */
+    public DynamicTcpOutboundGatewaySpec connectTimeout(String expression) {
+        getRequestFlow().setConnectTimeout(PARSER.parseExpression(expression));
+        return _this();
+    }
+
+    /**
+     * Setting a remoteTimeout value retrieving expression from message
+     *
+     * @param expression expression
+     * @return DynamicTcpOutboundGatewaySpec
+     */
+    public DynamicTcpOutboundGatewaySpec remoteTimeout(String expression) {
+        getRequestFlow().setRemoteTimeout(PARSER.parseExpression(expression));
         return _this();
     }
 
