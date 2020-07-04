@@ -40,18 +40,19 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private String responseChannel = DEFAULT_RESPONSE_CHANNEL_NAME;
     private AbstractByteArraySerializer deserializer = new ByteArrayCrLfSerializer();
+    private Serializer<?> serializer;
     private Expression cacheableExpression = new ValueExpression<>(Boolean.FALSE);
     private Expression remoteTimeoutExpression = new ValueExpression<>(DEFAULT_REMOTE_TIMEOUT);
     private Expression connectTimeoutExpression = new ValueExpression<>(DEFAULT_CONNECT_TIMEOUT);
-    private Serializer<?> serializer;
     private Expression hostExpression;
     private Expression portExpression;
+    private Expression singleConnectionExpression;
 
     public DynamicTcpOutboundGateway(IntegrationFlowContext flowContext) {
         this.flowContext = flowContext;
     }
 
-    private static String getFlowId(String host, Integer port) {
+    protected static String getFlowId(String host, Integer port) {
         return String.format("flow_%s_%d.chl", host, port);
     }
 
@@ -60,11 +61,12 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
         final String host = getHost(message);
         final int port = getPort(message);
         final boolean cacheable = isCacheable(message);
+        final boolean isSingleConnection = isSingleConnection(message);
         final String flowId = getFlowId(host, port) + (cacheable ? "" : System.nanoTime());
 
         final TcpClientConnectionFactorySpec connectionFactorySpec = Tcp.netClient(host, port)
                 .connectTimeout(getConnectTimeout(message));
-        final TcpOutboundGatewaySpec gatewaySpec = getMessageHandlerSpec(connectionFactorySpec)
+        final TcpOutboundGatewaySpec gatewaySpec = getMessageHandlerSpec(connectionFactorySpec, isSingleConnection)
                 .remoteTimeout(this::getRemoteTimeout);
         final IntegrationFlowContext.IntegrationFlowRegistration registration;
         if (!cacheable) {
@@ -96,9 +98,9 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
                 .register();
     }
 
-    private TcpOutboundGatewaySpec getMessageHandlerSpec(TcpClientConnectionFactorySpec connectionFactorySpec) {
+    private TcpOutboundGatewaySpec getMessageHandlerSpec(TcpClientConnectionFactorySpec connectionFactorySpec, boolean isSingleConnection) {
         final TcpClientConnectionFactorySpec connectionFactory = connectionFactorySpec
-                .singleUseConnections(true);
+                .singleUseConnections(isSingleConnection);
         if (serializer != null) {
             connectionFactory.serializer(serializer);
         }
@@ -106,6 +108,16 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
             connectionFactory.deserializer(deserializer);
         }
         return Tcp.outboundGateway(connectionFactory);
+    }
+
+    private boolean isSingleConnection(Message<?> requestMessage) {
+        if (this.singleConnectionExpression != null) {
+            final Boolean value = this.singleConnectionExpression.getValue(this.evaluationContext, requestMessage, Boolean.class);
+            if (value != null) {
+                return value;
+            }
+        }
+        return false;
     }
 
     private boolean isCacheable(Message<?> requestMessage) {
@@ -178,5 +190,9 @@ public class DynamicTcpOutboundGateway implements MessageProcessor<MessageChanne
 
     public void setRemoteTimeout(Expression timeoutExpression) {
         this.remoteTimeoutExpression = timeoutExpression;
+    }
+
+    public void setSingleConnection(Expression parseExpression) {
+        this.singleConnectionExpression = parseExpression;
     }
 }

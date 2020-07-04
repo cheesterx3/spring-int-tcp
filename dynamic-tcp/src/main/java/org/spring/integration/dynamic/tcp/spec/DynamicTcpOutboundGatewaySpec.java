@@ -2,6 +2,7 @@ package org.spring.integration.dynamic.tcp.spec;
 
 import org.spring.integration.dynamic.tcp.DynamicTcpOutboundGateway;
 import org.springframework.core.serializer.Serializer;
+import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.integration.dsl.MessageProcessorSpec;
 import org.springframework.integration.dsl.context.IntegrationFlowContext;
@@ -165,7 +166,15 @@ public class DynamicTcpOutboundGatewaySpec extends MessageProcessorSpec<DynamicT
         return _this();
     }
 
+    public DynamicTcpOutboundGatewaySpec singleConnection(String expression) {
+        getRequestFlow().setSingleConnection(PARSER.parseExpression(expression));
+        return _this();
+    }
 
+    public DynamicTcpOutboundGatewaySpec singleConnection(boolean value) {
+        getRequestFlow().setSingleConnection(new ValueExpression<>(value));
+        return _this();
+    }
 
     private DynamicTcpOutboundGateway getRequestFlow() {
         return (DynamicTcpOutboundGateway) this.target;
